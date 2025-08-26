@@ -1,0 +1,10 @@
+pytest
+fastapi[all]
+httpx
+coverage
+pytest-cov
+ruff
+black
+mypy
+types-requests
+bandit
