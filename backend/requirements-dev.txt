@@ -1,8 +1,7 @@
 pytest
-fastapi[all]
+pytest-cov
 httpx
 coverage
-pytest-cov
 ruff
 black
 mypy
