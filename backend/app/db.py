@@ -1,7 +1,10 @@
 import os
-from sqlalchemy import text, create_engine
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
+load_dotenv()
 
-# simple sync engine (enough for smoke-tests in CI)
+DEFAULT_URL = "postgresql+psycopg://postgres:postgres@localhost:5432/habitsdb"
+DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_URL)
+
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
