@@ -30,7 +30,7 @@ jobs:
       run:
         working-directory: backend
 
-    # Make your app code importable + set DB URL för psycopg3
+    # Make your app code importable + set DB URL for psycopg3
     env:
       PYTHONPATH: .
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/habitsdb
