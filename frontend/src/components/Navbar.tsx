@@ -1,32 +1,49 @@
-import Button from "./ui/Button";
+import { NavLink } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
+  const base = "nav-link";
+  const active = "text-[var(--color-fg)] font-medium";
+
   return (
     <header className="navbar">
       <div className="navbar-inner">
-        <a href="/" className="flex items-center gap-2">
+        <NavLink to="/" className="flex items-center gap-2">
           <span className="brand">H</span>
           <span className="text-lg font-semibold">Habits</span>
-        </a>
+        </NavLink>
 
         <nav className="nav-links">
-          <a className="nav-link" href="#">
-            Dashboard
-          </a>
-          <a className="nav-link" href="#">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              [base, isActive && active].filter(Boolean).join(" ")
+            }
+          >
+            Home
+          </NavLink>
+          <NavLink
+            to="/habits"
+            className={({ isActive }) =>
+              [base, isActive && active].filter(Boolean).join(" ")
+            }
+          >
             Habits
-          </a>
-          <a className="nav-link" href="#">
-            Stats
-          </a>
+          </NavLink>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              [base, isActive && active].filter(Boolean).join(" ")
+            }
+          >
+            Settings
+          </NavLink>
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost">Logga in</Button>
-          <Button variant="primary">Skapa konto</Button>
+          <ThemeToggle />
         </div>
-        <ThemeToggle />
       </div>
     </header>
   );
