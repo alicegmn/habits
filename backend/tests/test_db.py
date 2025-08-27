@@ -3,7 +3,7 @@ from app.main import app
 
 client = TestClient(app)
 
-def test_root_ok():
-    r = client.get("/")
+def test_db_health_ok():
+    r = client.get("/health/db")
     assert r.status_code == 200
-    assert r.json() == {"msg": "HabitHub backend is running"}
+    assert r.json() == {"status": "ok"}
