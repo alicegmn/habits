@@ -15,6 +15,13 @@ export default function Home() {
   const [habits, setHabits] = useState<string[]>([]);
   const [newHabit, setNewHabit] = useState("");
 
+  const addHabit = () => {
+    if (newHabit.trim() !== "") {
+      setHabits([...habits, newHabit]);
+      setNewHabit("");
+    }
+  };
+
   return (
     <>
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
@@ -22,10 +29,13 @@ export default function Home() {
       <section className="grid-cards">
         <Card>
           <CardTitle>Todays habits</CardTitle>
-          <CardSubtle>Kom igång med 3 vanor</CardSubtle>
+          <CardSubtle>Kom igång med {habits.length} vanor</CardSubtle>
           <div className="mt-4 flex gap-2">
-            <Badge variant="primary">Focus</Badge>
-            <Badge>Mindfulness</Badge>
+            {habits.map((habit, index) => (
+              <Badge key={index} variant="primary">
+                {habit}
+              </Badge>
+            ))}
           </div>
           <CardActions>
             <Button>Stop habit</Button>
@@ -34,18 +44,24 @@ export default function Home() {
         </Card>
 
         <Card>
-          <CardTitle>Start a habit</CardTitle>
+          <CardTitle>Start a new habit</CardTitle>
           <div className="mt-3 space-y-3">
-            <Input placeholder="Vananamn" />
+            <Input
+              placeholder="I'm going to..."
+              value={newHabit}
+              onChange={(e) => setNewHabit(e.target.value)} // Uppdatera ny vana
+            />
+            <Textarea placeholder="Description..." />
             <Select defaultValue="daily">
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
             </Select>
-            <Textarea placeholder="Descripton" />
           </div>
           <div className="mt-4">
-            <Button variant="primary">Add to your habits</Button>
+            <Button variant="primary" onClick={addHabit}>
+              Add to habits
+            </Button>
           </div>
         </Card>
 
