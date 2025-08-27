@@ -1,9 +1,6 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:15-alpine
-    container_name: habits-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -17,27 +14,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    restart: unless-stopped
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: habits-api
     depends_on:
       db:
         condition: service_healthy
     environment:
-      # psycopg3 driver (matchar dina deps)
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/habitsdb
-      # lägg fler här, t.ex. JWT_SECRET etc
     ports:
       - "8000:8000"
     command: >
       uvicorn app.main:app
       --host 0.0.0.0 --port 8000 --reload
     volumes:
-      # hot reload av koden lokalt (valfritt, men najs i dev)
       - ./backend:/app
+    restart: unless-stopped
 
 volumes:
   db_data:
