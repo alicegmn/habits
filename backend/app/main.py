@@ -10,6 +10,9 @@ def root():
 
 @app.get("/health/db")
 def health_db():
-    with engine.connect() as conn:
-        conn.execute(text("SELECT 1"))
-    return {"db": "ok"}
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"db": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Database unavailable: {str(e)}")
