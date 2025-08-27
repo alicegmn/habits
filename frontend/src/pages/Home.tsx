@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Button,
   Card,
@@ -11,6 +12,9 @@ import {
 } from "../components/ui/index";
 
 export default function Home() {
+  const [habits, setHabits] = useState<string[]>([]);
+  const [newHabit, setNewHabit] = useState("");
+
   return (
     <>
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
