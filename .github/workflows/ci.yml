@@ -1,0 +1,26 @@
+name: CI - Docker build
+
+on:
+  push:
+    branches: ["dev"]
+
+# Jobs
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Steps
+    steps:
+      ## 1 Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # (Optional) Setup buildx for faster/more new docker-build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      ## 2 Build docker image
+      - name: Build image
+        run: |
+          docker build \
+            -t alicegmn/habits:latest \
+            ./backend
