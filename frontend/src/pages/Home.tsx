@@ -67,7 +67,9 @@ export default function Home() {
 
         <Card>
           <CardTitle>Streak</CardTitle>
-          <p className="mt-2 text-4xl font-bold text-brand-600">7 🔥</p>
+          <p className="mt-2 text-4xl font-bold text-brand-600">
+            {habits.length} 🔥
+          </p>
           <div className="mt-4 divider" />
           <CardSubtle>You're on fire!</CardSubtle>
         </Card>
