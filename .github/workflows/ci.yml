@@ -20,10 +20,7 @@ jobs:
 
       ## 2 Build docker image
       - name: Build image
-        run: |
-          docker build \
-            -t alicegmn/habits:latest \
-            ./backend
+        run: docker build -t habits-backend:latest ./backend
 
       ## 3 Run tests inside the container
       - name: Run tests inside container
