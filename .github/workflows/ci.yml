@@ -24,3 +24,7 @@ jobs:
           docker build \
             -t alicegmn/habits:latest \
             ./backend
+
+      ## 3 Run tests inside the container
+      - name: Run tests inside container
+        run: docker run --rm habits-backend pytest -q
