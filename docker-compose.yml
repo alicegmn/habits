@@ -36,6 +36,19 @@ services:
       - ./backend:/app
     restart: unless-stopped
 
+  backend-node:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend-node/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8001:8000" # host:container
+    restart: unless-stopped
+
   frontend:
     build: ./frontend
     ports:
