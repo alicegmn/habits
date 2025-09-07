@@ -3,17 +3,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const { Pool } = pg;
-
 const DATABASE_URL =
   process.env.DATABASE_URL ||
   "postgresql://postgres:postgres@localhost:5432/habitsdb";
 
-export const pool = new Pool({
-  connectionString: DATABASE_URL,
-  // ssl: { rejectUnauthorized: false } // (om du kör managed PG med SSL)
-});
+export const pool = new Pool({ connectionString: DATABASE_URL });
 
-// Skapa tabell om den inte finns
 export async function ensureSchema() {
   const sql = `
   CREATE TABLE IF NOT EXISTS habits (

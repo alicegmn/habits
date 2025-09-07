@@ -20,24 +20,6 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file:
-      - ./backend/.env
-    ports:
-      - "8000:8000"
-    command: >
-      uvicorn app.main:app
-      --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - ./backend:/app
-    restart: unless-stopped
-
-  backend-node:
-    build:
       context: ./backend-node
       dockerfile: Dockerfile
     env_file:
@@ -50,19 +32,15 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
     ports:
-      - "80:80"
+      - "5173:5173"
     depends_on:
-      - backend
-
-  pgadmin:
-    image: dpage/pgadmin4
-    ports:
-      - "5050:80"
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@example.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
+      - backend-node
 
 volumes:
   db_data:

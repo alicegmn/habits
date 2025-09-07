@@ -13,17 +13,15 @@ app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
 app.use(express.json());
 
 // Health
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // DB ping
 app.get("/db/ping", async (_req, res, next) => {
   try {
     await pool.query("SELECT 1");
     res.json({ db: "ok" });
-  } catch (err) {
-    next(err);
+  } catch (e) {
+    next(e);
   }
 });
 
@@ -34,8 +32,8 @@ app.get("/habits", async (_req, res, next) => {
       "SELECT id, title, description, frequency FROM habits ORDER BY id DESC"
     );
     res.json(rows);
-  } catch (err) {
-    next(err);
+  } catch (e) {
+    next(e);
   }
 });
 
@@ -43,22 +41,22 @@ app.get("/habits", async (_req, res, next) => {
 app.post("/habits", async (req, res, next) => {
   try {
     const { title, description = null, frequency = "daily" } = req.body || {};
-    if (!title || typeof title !== "string" || !title.trim()) {
+    if (!title || !String(title).trim()) {
       return res.status(400).json({ detail: "title is required" });
     }
     const { rows } = await pool.query(
       `INSERT INTO habits (title, description, frequency)
        VALUES ($1, $2, $3)
        RETURNING id, title, description, frequency`,
-      [title.trim(), description, String(frequency)]
+      [String(title).trim(), description, String(frequency)]
     );
     res.status(201).json(rows[0]);
-  } catch (err) {
-    next(err);
+  } catch (e) {
+    next(e);
   }
 });
 
-// Fallback error handler
+// Error handler
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ detail: "Internal Server Error" });
@@ -66,9 +64,7 @@ app.use((err, _req, res, _next) => {
 
 async function start() {
   await ensureSchema();
-  app.listen(PORT, () => {
-    console.log(`Node/Express API listening on http://0.0.0.0:${PORT}`);
-  });
+  app.listen(PORT, () => console.log(`Express API on http://0.0.0.0:${PORT}`));
 }
 
 start().catch((e) => {
