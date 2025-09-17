@@ -1,0 +1,25 @@
+name: Init Azure DB
+
+on:
+  workflow_dispatch: {} # manual trigger from github actions
+
+jobs:
+  init-azure-db:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Init to Azure Postgres
+        env:
+          PGHOST: ${{ secrets.PGHOST }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+        run: |
+          psql "host=$PGHOST dbname=$PGDATABASE user=$PGUSER password=$PGPASSWORD" -f ./infra/db/init/*.sql
+            echo "Database initialized successfully."
