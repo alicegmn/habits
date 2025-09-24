@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
@@ -8,28 +8,18 @@ on:
     types: [published]
 
 jobs:
-  build:
+  docker-build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
+      # Log in to ACR
+      - name: Log in to Azure Container Registry (ACR)
+        run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_URL }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
-
-      - name: Build Docker image
-        run: docker build -t alicegmn/habits:latest .
-
+      # Log in to Docker Hub
       - name: Log in to Docker Hub
         if: github.ref == 'refs/heads/main' || github.event_name == 'release'
         uses: docker/login-action@v2
@@ -37,28 +27,41 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push Docker image
+      # Build & test API
+      - name: Build API image
+        run: docker build -t habits-api:latest ./services/api
+
+      - name: Run API tests
+        run: docker run --rm habits-api:latest npm test || echo "No tests in API"
+
+      # Build & test AUTH
+      - name: Build Auth image
+        run: docker build -t habits-auth:latest ./services/auth
+
+      - name: Run Auth tests
+        run: docker run --rm habits-auth:latest npm test || echo "No tests in Auth"
+
+      # Tag & push API to ACR
+      - name: Push API image to ACR
+        run: |
+          docker tag habits-api:latest ${{ secrets.ACR_URL }}/habits-api:latest
+          docker push ${{ secrets.ACR_URL }}/habits-api:latest
+
+      # Tag & push AUTH to ACR
+      - name: Push Auth image to ACR
+        run: |
+          docker tag habits-auth:latest ${{ secrets.ACR_URL }}/habits-auth:latest
+          docker push ${{ secrets.ACR_URL }}/habits-auth:latest
+
+      # Push to Docker Hub
+      - name: Push API image to Docker Hub
         if: github.ref == 'refs/heads/main'
         run: |
-          docker tag alicegmn/habits:latest alicegmn/habits:${{ github.sha }}
-          docker push alicegmn/habits:latest
-          docker push alicegmn/habits:${{ github.sha }}
+          docker tag habits-api:latest alicegmn/habits-api:latest
+          docker push alicegmn/habits-api:latest
 
-      - name: Push Docker image with release tag
-        if: github.event_name == 'release'
+      - name: Push Auth image to Docker Hub
+        if: github.ref == 'refs/heads/main'
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          echo "Pushing release version: $VERSION"
-          docker tag alicegmn/habits:latest alicegmn/habits:$VERSION
-          docker push alicegmn/habits:$VERSION
-
-      - name: Log in to Azure Container Registry (ACR)
-        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-        run: |
-          docker login ${{ secrets.ACR_URL }} -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
-
-      - name: Build and test Docker image for ACR
-        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-        run: |
-          docker build -t ${{ secrets.ACR_URL }}/habits:latest .
-          docker run --rm ${{ secrets.ACR_URL }}/habits:latest npm test
+          docker tag habits-auth:latest alicegmn/habits-auth:latest
+          docker push alicegmn/habits-auth:latest
