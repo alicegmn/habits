@@ -1,10 +1,29 @@
-FROM node:20-alpine
-
+# ---- Build stage ----
+FROM node:20-alpine AS build
 WORKDIR /app
 
+# Install deps
+COPY package*.json tsconfig*.json ./
+RUN npm ci
+
+# Copy source
+COPY src ./src
+
+# Compile TS → JS
+RUN npm run build
+
+# ---- Runtime stage ----
+FROM node:20-alpine
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Only prod deps
 COPY package*.json ./
-RUN npm install
+RUN npm ci --omit=dev
 
-COPY . .
+# Copy built code
+COPY --from=build /app/dist ./dist
 
-CMD ["npm", "run", "dev"]
+EXPOSE 4000
+CMD ["node", "dist/server.js"]
