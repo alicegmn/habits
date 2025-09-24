@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import Habits from "./pages/Habits";
 import Settings from "./pages/Settings";
 import LogIn from "./pages/LogIn";
+import About from "./pages/About";
 
 const router = createBrowserRouter([
   // Publik route (endast login)
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
           { index: true, element: <Home /> },
           { path: "habits", element: <Habits /> },
           { path: "settings", element: <Settings /> },
+          { path: "about", element: <About /> },
         ],
       },
     ],

@@ -1,15 +1,14 @@
 import { Button } from "./ui";
+import { NavLink } from "react-router-dom";
 
 export default function Footer() {
   return (
-    <footer className="p-6 border-t mt-12">
-      <h2 className="mb-4 text-lg font-semibold">Connect</h2>
-      <div className="flex gap-2">
-        <Button variant="primary">Contact us</Button>
-        <Button variant="outline" size="sm">
-          Privacy Policy
-        </Button>
-        <Button variant="ghost">About</Button>
+    <footer className="fixed mb-0 p-6 mt-12 ">
+      <div className="gap-2">
+        <NavLink to="/about">
+          <Button variant="primary">About</Button>
+        </NavLink>
+        <p></p>
       </div>
     </footer>
   );
