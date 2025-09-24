@@ -51,3 +51,14 @@ jobs:
           echo "Pushing release version: $VERSION"
           docker tag alicegmn/habits:latest alicegmn/habits:$VERSION
           docker push alicegmn/habits:$VERSION
+
+      - name: Log in to Azure Container Registry (ACR)
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        run: |
+          docker login ${{ secrets.ACR_URL }} -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and test Docker image for ACR
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        run: |
+          docker build -t ${{ secrets.ACR_URL }}/habits:latest .
+          docker run --rm ${{ secrets.ACR_URL }}/habits:latest npm test
