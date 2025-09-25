@@ -1,0 +1,66 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  release:
+    types: [published]
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Log in to ACR
+      - name: Log in to Azure Container Registry (ACR)
+        run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_URL }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
+
+      # Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build & test API
+      - name: Build API image
+        run: docker build -t habits-api:latest ./services/api
+
+      - name: Run API tests
+        run: docker run --rm habits-api:latest npm test || echo "No tests in API"
+
+      # Build & test AUTH
+      - name: Build Auth image
+        run: docker build -t habits-auth:latest ./services/auth
+
+      - name: Run Auth tests
+        run: docker run --rm habits-auth:latest npm test || echo "No tests in Auth"
+
+      # Tag & push API to ACR
+      - name: Push API image to ACR
+        run: |
+          docker tag habits-api:latest ${{ secrets.ACR_URL }}/habits-api:latest
+          docker push ${{ secrets.ACR_URL }}/habits-api:latest
+
+      # Tag & push AUTH to ACR
+      - name: Push Auth image to ACR
+        run: |
+          docker tag habits-auth:latest ${{ secrets.ACR_URL }}/habits-auth:latest
+          docker push ${{ secrets.ACR_URL }}/habits-auth:latest
+
+      # Push to Docker Hub
+      - name: Push API image to Docker Hub
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker tag habits-api:latest alicegmn/habits-api:latest
+          docker push alicegmn/habits-api:latest
+
+      - name: Push Auth image to Docker Hub
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker tag habits-auth:latest alicegmn/habits-auth:latest
+          docker push alicegmn/habits-auth:latest

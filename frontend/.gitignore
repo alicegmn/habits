@@ -1,0 +1,38 @@
+# ========== GLOBAL ==========
+.DS_Store
+.env
+.env.*           # e.g. .env.local, .env.production
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+backend/.env
+
+# ========== PYTHON BACKEND ==========
+backend/.venv/
+backend/__pycache__/
+backend/*.sqlite3
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.coverage
+backend/coverage.xml
+
+# ========== NODE FRONTEND ==========
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+frontend/build/
+frontend/.vite/
+frontend/coverage/
+
+# ========== DOCKER ==========
+*.tar
+docker-compose.override.yml
+
+# ========== OS / EDITOR SPECIFIC ==========
+.vscode/
+.idea/
+*.swp

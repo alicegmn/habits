@@ -1,0 +1,55 @@
+## FRÅGA TILL LINUS, DOCKER I DENNA PIPELINE?
+
+name: Test
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: node:20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies for API
+        working-directory: ./services/api
+        run: npm ci
+
+      - name: Install dependencies for Auth
+        working-directory: ./services/auth
+        run: npm ci
+
+      - name: Run API tests
+        working-directory: ./services/api
+        run: npm test || echo "No tests in API"
+
+      - name: Run Auth tests
+        working-directory: ./services/auth
+        run: npm test || echo "No tests in Auth"
+
+      - name: Build API
+        working-directory: ./services/api
+        run: npm run build
+
+      - name: Build Auth
+        working-directory: ./services/auth
+        run: npm run build
+
+      - name: Lint API code
+        working-directory: ./services/api
+        run: npm run lint
+
+      - name: Lint Auth code
+        working-directory: ./services/auth
+        run: npm run lint

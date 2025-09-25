@@ -1,0 +1,32 @@
+services:
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    ports: ["3000:3000"]
+    env_file:
+      - ./.env
+    depends_on:
+      - auth
+
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    env_file:
+      - ./services/auth/.env
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./services/auth:/app
+      - /app/node_modules
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+      - auth
