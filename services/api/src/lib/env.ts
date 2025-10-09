@@ -6,7 +6,7 @@ import { z } from "zod";
  */
 const envSchema = z.object({
 	// API
-	API_PORT: z.coerce.number().default(3000),
+	PORT: z.coerce.number().default(3000),
 	CORS_ORIGIN: z.string().url().default("http://localhost:8080"),
 
 	// Auth

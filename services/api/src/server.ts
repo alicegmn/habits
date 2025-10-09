@@ -3,9 +3,10 @@ import { getEnv } from "./lib/env";
 import { createApp } from "./app";
 import { testDbConnection } from "./db/testConnection";
 import { runInitScripts } from "./db/initDb";
+import { property } from "zod";
 
 const env = getEnv();
-const port = env.API_PORT;
+const port = env.PORT;
 const host = "0.0.0.0";
 
 async function startServer() {
