@@ -5,15 +5,15 @@ import { testDbConnection } from "./db/testConnection";
 import { runInitScripts } from "./db/initDb";
 
 const env = getEnv();
-const port = process.env.API_PORT || 3000;
+const port = env.API_PORT;
 const host = "0.0.0.0";
 
 async function startServer() {
 	try {
 		// Verify DB connection before starting
 		await testDbConnection();
-
-		await runInitScripts(); // 🔹 initialize DB schema
+		// Initialize DB schema and seed data
+		await runInitScripts();
 
 		// Create and start app
 		const app = createApp(env);
