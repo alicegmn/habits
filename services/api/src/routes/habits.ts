@@ -1,9 +1,16 @@
 import { Router } from "express";
 import { pool } from "../db/client";
 import { AppError } from "../lib/errors";
+import rateLimit from "express-rate-limit";
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
 
 const router = Router();
 
+router.use(limiter);
 // GET /habits
 router.get("/", async (_req, res, next) => {
   try {
