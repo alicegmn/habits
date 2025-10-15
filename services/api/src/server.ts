@@ -8,7 +8,7 @@ const PORT = process.env.API_PORT || 3000;
 async function bootstrap() {
 	const env = getEnv();
 
-	await testDbConnection(); // bara för att verifiera att DB går att nå
+	await testDbConnection();
 
 	const app = createApp(env);
 
