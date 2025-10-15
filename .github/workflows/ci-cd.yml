@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -8,6 +8,27 @@ on:
     types: [published]
 
 jobs:
+  security-check:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize CodeQL (AI Code Review Start)
+        uses: github/codeql-action/init@v3
+        with:
+          languages: typescript, javascript
+
+      - name: CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+
   docker-build:
     runs-on: ubuntu-latest
 
