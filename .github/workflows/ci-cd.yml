@@ -11,6 +11,8 @@ jobs:
   security-check:
     runs-on: ubuntu-latest
 
+    if: github.event_name == 'pull_request'
+
     permissions:
       contents: read
       security-events: write
