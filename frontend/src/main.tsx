@@ -14,16 +14,14 @@ import LogIn from "./pages/LogIn";
 import About from "./pages/About";
 
 const router = createBrowserRouter([
-  // Publik route (endast login)
   { path: "/login", element: <LogIn /> },
 
-  // Skyddade routes
   {
     path: "/",
-    element: <ProtectedRoute />, // kollar auth först
+    element: <ProtectedRoute />,
     children: [
       {
-        element: <Layout />, // visas bara om auth OK
+        element: <Layout />,
         children: [
           { index: true, element: <Home /> },
           { path: "habits", element: <Habits /> },
