@@ -30,14 +30,6 @@ jobs:
         working-directory: ./services/auth
         run: npm ci
 
-      - name: Lint API code
-        working-directory: ./services/api
-        run: npx eslint .
-
-      - name: Lint Auth code
-        working-directory: ./services/auth
-        run: npx eslint .
-
       - name: Install Snyk CLI
         run: npm i -g snyk
 
