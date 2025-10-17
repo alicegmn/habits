@@ -26,10 +26,6 @@ jobs:
         working-directory: ./services/api
         run: npm ci
 
-      - name: Build Auth
-        working-directory: ./services/auth
-        run: npm run build
-
       - name: Lint API code
         working-directory: ./services/api
         run: npx eslint .
@@ -63,6 +59,10 @@ jobs:
 
       - name: Build API
         working-directory: ./services/api
+        run: npm run build
+
+      - name: Build Auth
+        working-directory: ./services/auth
         run: npm run build
 
       - name: Run API tests
