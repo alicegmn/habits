@@ -35,10 +35,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Log in to ACR
+      # Log in to Azure
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Log in to Azure Container Registry (ACR)
       - name: Log in to Azure Container Registry (ACR)
         run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_URL }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
@@ -56,38 +63,25 @@ jobs:
       - name: Run API tests
         run: docker run --rm habits-api:latest npm test || echo "No tests in API"
 
-      # Build & test AUTH
+      # Build & test Auth
       - name: Build Auth image
         run: docker build -t habits-auth:latest ./services/auth
 
       - name: Run Auth tests
         run: docker run --rm habits-auth:latest npm test || echo "No tests in Auth"
 
-      # Tag & push API to ACR
+      # Push images to ACR
       - name: Push API image to ACR
         run: |
           docker tag habits-api:latest ${{ secrets.ACR_URL }}/habits-api:latest
           docker push ${{ secrets.ACR_URL }}/habits-api:latest
 
-      # Tag & push AUTH to ACR
       - name: Push Auth image to ACR
         run: |
           docker tag habits-auth:latest ${{ secrets.ACR_URL }}/habits-auth:latest
           docker push ${{ secrets.ACR_URL }}/habits-auth:latest
 
-      # Push to Docker Hub
-      - name: Push API image to Docker Hub
-        if: github.ref == 'refs/heads/main'
-        run: |
-          docker tag habits-api:latest alicegmn/habits-api:latest
-          docker push alicegmn/habits-api:latest
-
-      - name: Push Auth image to Docker Hub
-        if: github.ref == 'refs/heads/main'
-        run: |
-          docker tag habits-auth:latest alicegmn/habits-auth:latest
-          docker push alicegmn/habits-auth:latest
-
+      # Deploy to Azure Web App (only on main branch)
       - name: Deploy API to Azure Web App
         if: github.ref == 'refs/heads/main'
         uses: azure/webapps-deploy@v2
