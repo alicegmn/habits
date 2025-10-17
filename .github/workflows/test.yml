@@ -22,6 +22,14 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Lint API code
+        working-directory: ./services/api
+        run: npx eslint .
+
+      - name: Lint Auth code
+        working-directory: ./services/auth
+        run: npx eslint .
+
       - name: Install dependencies for API
         working-directory: ./services/api
         run: npm ci
@@ -29,6 +37,9 @@ jobs:
       - name: Install dependencies for Auth
         working-directory: ./services/auth
         run: npm ci
+
+      - name: Install Snyk CLI
+        run: npm i -g snyk
 
       - name: Run Snyk for dependencies on API
         uses: snyk/actions/node@master
@@ -46,14 +57,6 @@ jobs:
         with:
           args: --file=services/auth/package.json
 
-      - name: Run API tests
-        working-directory: ./services/api
-        run: npm test || echo "No tests in API"
-
-      - name: Run Auth tests
-        working-directory: ./services/auth
-        run: npm test || echo "No tests in Auth"
-
       - name: Build API
         working-directory: ./services/api
         run: npm run build
@@ -62,10 +65,10 @@ jobs:
         working-directory: ./services/auth
         run: npm run build
 
-      - name: Lint API code
+      - name: Run API tests
         working-directory: ./services/api
-        run: npm run lint
+        run: npm test || echo "No tests in API"
 
-      - name: Lint Auth code
+      - name: Run Auth tests
         working-directory: ./services/auth
-        run: npm run lint
+        run: npm test || echo "No tests in Auth"
