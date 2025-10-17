@@ -26,6 +26,10 @@ jobs:
         working-directory: ./services/api
         run: npm ci
 
+      - name: Install dependencies for Auth
+        working-directory: ./services/auth
+        run: npm ci
+
       - name: Lint API code
         working-directory: ./services/api
         run: npx eslint .
@@ -52,10 +56,6 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --file=services/auth/package.json
-
-      - name: Install dependencies for Auth
-        working-directory: ./services/auth
-        run: npm ci
 
       - name: Build API
         working-directory: ./services/api
