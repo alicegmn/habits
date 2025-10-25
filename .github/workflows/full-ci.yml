@@ -1,0 +1,41 @@
+name: Full CI workflow
+
+on:
+    push:
+        branches:
+            - main
+            - v34
+    pull_request:
+        branches:
+            - main
+            - v34
+
+jobs:
+    frontend-full-CI:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v3
+
+            - name: Install Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "18"
+
+            - name: Install dependencies
+              working-directory: ./frontend
+              run: npm install
+
+            - name: Run tests
+              working-directory: ./frontend
+              run: npm test
+
+            - name: Build project
+              if: success()
+              working-directory: ./frontend
+              run: npm run build
+
+            - name: Confirm pipeline completion
+              if: success()
+              run: echo "All steps completed successfully!"
