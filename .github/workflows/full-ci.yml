@@ -24,26 +24,22 @@ jobs:
           node-version: "18"
 
       - name: Install dependencies
-        working-directory: ./frontend
         run: npm install
-
-      - name: Code Quality Check
         working-directory: ./frontend
+
+      - name: Lint code
         run: npm run lint
+        working-directory: ./frontend
 
       - name: Run tests
-        working-directory: ./frontend
         run: npm test
+        working-directory: ./frontend
 
       - name: Build project
-        if: success()
-        working-directory: ./frontend
+        if: github.ref == 'refs/heads/main'
         run: npm run build
-
-      - name: Confirm pipeline completion
-        if: success()
-        run: echo "All steps completed successfully!"
+        working-directory: ./frontend
 
       - name: Mock Deployment
-        if: success()
+        if: github.ref == 'refs/heads/main'
         run: echo "Deploying code to the mock environment..."
