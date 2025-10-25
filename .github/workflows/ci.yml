@@ -12,6 +12,7 @@ jobs:
 
         steps:
             - name: Check out code
+              working-directory: ./frontend
               run: actions/checkout@v3
 
             - name: Install Node.js
