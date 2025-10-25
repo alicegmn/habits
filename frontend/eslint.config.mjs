@@ -1,23 +1,24 @@
-// services/api/eslint.config.mjs (ref: 9f6a19287f8da0afa9911e18e42d5a165d98da79)
+import tseslint from "@typescript-eslint/eslint-plugin";
+import tsparser from "@typescript-eslint/parser";
+import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 
-export default defineConfig({
-  root: true,
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaVersion: "latest",
-    sourceType: "module",
-    project: ["./tsconfig.json"],
-    // for .mjs ESM configs, use this to set tsconfig root dir
-    tsconfigRootDir: new URL(".", import.meta.url).pathname,
+export default defineConfig([
+  js.configs.recommended,
+  {
+    languageOptions: {
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+        project: ["./tsconfig.json"],
+        tsconfigRootDir: new URL(".", import.meta.url).pathname,
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tseslint,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+    },
   },
-  plugins: ["@typescript-eslint"],
-  extends: [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended", // basic TS rules
-    // "plugin:@typescript-eslint/recommended-requiring-type-checking" // enable if you set project & want type-aware rules
-  ],
-  rules: {
-    // your custom rules here
-  },
-});
+]);
