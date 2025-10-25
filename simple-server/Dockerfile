@@ -1,5 +1,4 @@
-## For testing
-## ## docker build --target build -t simple-server-test . + docker run --rm simple-server-test
+## Test image
 FROM node:18-alpine AS build
 WORKDIR /app
 COPY package*.json ./
@@ -7,7 +6,7 @@ RUN npm install
 COPY . .
 RUN npm test
 
-## For production
+## Runtime-stage
 FROM node:18-alpine AS production
 WORKDIR /app
 COPY --from=build /app/package*.json ./
