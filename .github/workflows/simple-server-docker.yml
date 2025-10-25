@@ -20,7 +20,7 @@ jobs:
 
       - name: Build and test image
         working-directory: ./simple-server
-        run: docker build --target build -t simple-server-test .
+        run: docker build --target build -t simple-server-test -f Dockerfile .
 
   build-and-push:
     runs-on: ubuntu-latest
