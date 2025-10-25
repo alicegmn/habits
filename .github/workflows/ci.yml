@@ -14,6 +14,12 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
+      - name: Write out branch and commit info
+        run: |
+          echo "Running on branch: ${{ github.ref }}"
+          echo "Commit hash: ${{ github.sha }}"
+          echo "Executed by: ${{ github.actor }}"
+
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
