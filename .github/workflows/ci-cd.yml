@@ -44,7 +44,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       # ==============================================================
-      # 🧱 Build & Test API
+      # Build & Test API
       # ==============================================================
       - name: Build API image
         run: |
@@ -62,7 +62,7 @@ jobs:
         run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/habits-api:${BRANCH}-${SHORT_SHA} npm test || echo "No tests in API"
 
       # ==============================================================
-      # 🔐 Build & Test Auth
+      # Build & Test Auth
       # ==============================================================
       - name: Build Auth image
         run: |
@@ -81,7 +81,7 @@ jobs:
         run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/habits-auth:${BRANCH}-${SHORT_SHA} npm test || echo "No tests in Auth"
 
       # ==============================================================
-      # ☁️ Push images to both Docker Hub & ACR
+      # Push images to both Docker Hub & ACR
       # ==============================================================
       - name: Push API image to Docker Hub & ACR
         run: |
@@ -104,7 +104,7 @@ jobs:
           docker push $IMAGE_AUTH_ACR:${BRANCH}
 
       # ==============================================================
-      # 🧹 Cleanup old SHA tags
+      # Cleanup old SHA tags
       # ==============================================================
       - name: Cleanup old images in ACR
         run: |
@@ -129,22 +129,26 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fetch = require("node-fetch");
             const username = process.env.DOCKER_USERNAME;
             const token = process.env.DOCKER_PASSWORD;
             const repos = ["habits-api", "habits-auth"];
 
             for (const repo of repos) {
               const tagsUrl = `https://hub.docker.com/v2/repositories/${username}/${repo}/tags?page_size=100`;
-              const res = await fetch(tagsUrl);
+              const res = await fetch(tagsUrl, {
+                headers: { Authorization: `Basic ${Buffer.from(`${username}:${token}`).toString("base64")}` },
+              });
               const data = await res.json();
+              if (!data.results) continue;
+
+              // keep 10 newest SHA-style tags (e.g., main-abc1234)
               const tags = data.results
-                .filter(t => t.name.includes('-')) // match SHA tags
+                .filter(t => /-[0-9a-f]{7}$/.test(t.name))
                 .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
 
               const old = tags.slice(10);
               for (const tag of old) {
-                console.log(`🧹 Deleting ${repo}:${tag.name}`);
+                console.log(`Deleting ${repo}:${tag.name}`);
                 await fetch(`https://hub.docker.com/v2/repositories/${username}/${repo}/tags/${tag.name}/`, {
                   method: "DELETE",
                   headers: { Authorization: `Basic ${Buffer.from(`${username}:${token}`).toString("base64")}` },
