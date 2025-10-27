@@ -45,7 +45,10 @@ jobs:
 
       # Build & test Auth
       - name: Build Auth image
-        run: docker build -t habits-auth:latest ./services/auth
+        run: |
+          docker build \
+          --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+          -t habits-auth:latest ./services/auth
 
       - name: Run Auth tests
         run: docker run --rm habits-auth:latest npm test || echo "No tests in Auth"

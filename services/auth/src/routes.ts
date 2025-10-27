@@ -4,9 +4,14 @@ import bcrypt from "bcryptjs";
 import { pool } from "./db";
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET;
 
-// Register
+// --- Ensure JWT secret is defined ---
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("Missing environment variable: JWT_SECRET");
+}
+
+// --- Register ---
 router.post("/register", async (req, res) => {
   const { email, password } = req.body;
 
@@ -28,7 +33,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// Login
+// --- Login ---
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
