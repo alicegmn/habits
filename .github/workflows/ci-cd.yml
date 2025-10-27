@@ -1,68 +1,185 @@
-name: CI/CD Pipeline
+name: CI/CD
 
 on:
   push:
-    branches: [main, dev]
+    branches:
+      - main
+      - dev
   pull_request:
-  release:
-    types: [published]
+    branches:
+      - main
+      - dev
 
 jobs:
-  docker-build:
+  image-build-and-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      WEBSITES_PORT: ${{ secrets.WEBSITES_PORT }}
+      DOCKER_REGISTRY_SERVER_URL: ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}
+      DOCKER_REGISTRY_SERVER_USERNAME: ${{ secrets.DOCKER_REGISTRY_SERVER_USERNAME }}
+      DOCKER_REGISTRY_SERVER_PASSWORD: ${{ secrets.DOCKER_REGISTRY_SERVER_PASSWORD }}
+
     steps:
-      # Checkout code
+      # --- Checkout ---
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Log in to Azure
+      # --- Set branch and SHA variables ---
+      - name: Set branch and SHA variables
+        id: vars
+        run: |
+          echo "BRANCH=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      # --- Log in to Azure ---
       - name: Log in to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Log in to Azure Container Registry (ACR)
+      # --- Log in to ACR ---
       - name: Log in to Azure Container Registry (ACR)
         run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_URL }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
-      # Log in to Docker Hub
+      # --- Log in to Docker Hub ---
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build & test API
+      # ==============================================================
+      # Build & Test API
+      # ==============================================================
       - name: Build API image
-        run: docker build -t habits-api:latest ./services/api
+        run: |
+          IMAGE_API_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-api
+          IMAGE_API_ACR=${{ secrets.ACR_URL }}/habits-api
+
+          docker build \
+            -t $IMAGE_API_DOCKERHUB:${BRANCH}-${SHORT_SHA} \
+            -t $IMAGE_API_DOCKERHUB:${BRANCH} \
+            -t $IMAGE_API_ACR:${BRANCH}-${SHORT_SHA} \
+            -t $IMAGE_API_ACR:${BRANCH} \
+            ./services/api
 
       - name: Run API tests
-        run: docker run --rm habits-api:latest npm test || echo "No tests in API"
+        run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/habits-api:${BRANCH}-${SHORT_SHA} npm test || echo "No tests in API"
 
-      # Build & test Auth
+      # ==============================================================
+      # Build & Test Auth
+      # ==============================================================
       - name: Build Auth image
-        run: docker build -t habits-auth:latest ./services/auth
+        run: |
+          IMAGE_AUTH_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-auth
+          IMAGE_AUTH_ACR=${{ secrets.ACR_URL }}/habits-auth
+
+          docker build \
+            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            -t $IMAGE_AUTH_DOCKERHUB:${BRANCH}-${SHORT_SHA} \
+            -t $IMAGE_AUTH_DOCKERHUB:${BRANCH} \
+            -t $IMAGE_AUTH_ACR:${BRANCH}-${SHORT_SHA} \
+            -t $IMAGE_AUTH_ACR:${BRANCH} \
+            ./services/auth
 
       - name: Run Auth tests
-        run: docker run --rm habits-auth:latest npm test || echo "No tests in Auth"
+        run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/habits-auth:${BRANCH}-${SHORT_SHA} npm test || echo "No tests in Auth"
 
-      # Push images to ACR
-      - name: Push API image to ACR
+      # ==============================================================
+      # Push images to both Docker Hub & ACR
+      # ==============================================================
+      - name: Push API image to Docker Hub & ACR
         run: |
-          docker tag habits-api:latest ${{ secrets.ACR_URL }}/habits-api:latest
-          docker push ${{ secrets.ACR_URL }}/habits-api:latest
+          IMAGE_API_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-api
+          IMAGE_API_ACR=${{ secrets.ACR_URL }}/habits-api
 
-      - name: Push Auth image to ACR
+          docker push $IMAGE_API_DOCKERHUB:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_API_DOCKERHUB:${BRANCH}
+          docker push $IMAGE_API_ACR:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_API_ACR:${BRANCH}
+
+      - name: Push Auth image to Docker Hub & ACR
         run: |
-          docker tag habits-auth:latest ${{ secrets.ACR_URL }}/habits-auth:latest
-          docker push ${{ secrets.ACR_URL }}/habits-auth:latest
+          IMAGE_AUTH_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-auth
+          IMAGE_AUTH_ACR=${{ secrets.ACR_URL }}/habits-auth
 
-      # Deploy to Azure Web App (only on main branch)
-      - name: Deploy API to Azure Web App
-        if: github.ref == 'refs/heads/main'
-        uses: azure/webapps-deploy@v2
+          docker push $IMAGE_AUTH_DOCKERHUB:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_AUTH_DOCKERHUB:${BRANCH}
+          docker push $IMAGE_AUTH_ACR:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_AUTH_ACR:${BRANCH}
+
+        # ==============================================================
+      # Deploy to Azure Web App (Container)
+      # ==============================================================
+
+      - name: Deploy API to Azure App Service
+        uses: azure/webapps-deploy@v3
         with:
           app-name: "habits-api"
-          images: "${{ secrets.ACR_URL }}/habits-api:latest"
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_API }}
+          images: |
+            ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}/habits-api:${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          WEBSITES_PORT: ${{ secrets.WEBSITES_PORT }}
+          DOCKER_REGISTRY_SERVER_URL: ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}
+          DOCKER_REGISTRY_SERVER_USERNAME: ${{ secrets.DOCKER_REGISTRY_SERVER_USERNAME }}
+          DOCKER_REGISTRY_SERVER_PASSWORD: ${{ secrets.DOCKER_REGISTRY_SERVER_PASSWORD }}
+
+      # ==============================================================
+      # Cleanup old SHA tags
+      # ==============================================================
+      - name: Cleanup old images in ACR
+        run: |
+          echo "🧹 Cleaning up old tags in ACR..."
+          az acr repository show-tags \
+            --name ${{ secrets.ACR_NAME }} \
+            --repository habits-api \
+            --orderby time_desc \
+            --output tsv | tail -n +11 | xargs -I% az acr repository delete \
+              --name ${{ secrets.ACR_NAME }} \
+              --image habits-api:% --yes || true
+
+          az acr repository show-tags \
+            --name ${{ secrets.ACR_NAME }} \
+            --repository habits-auth \
+            --orderby time_desc \
+            --output tsv | tail -n +11 | xargs -I% az acr repository delete \
+              --name ${{ secrets.ACR_NAME }} \
+              --image habits-auth:% --yes || true
+
+      - name: Cleanup old images in Docker Hub
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const username = process.env.DOCKER_USERNAME;
+            const token = process.env.DOCKER_PASSWORD;
+            const repos = ["habits-api", "habits-auth"];
+
+            for (const repo of repos) {
+              const tagsUrl = `https://hub.docker.com/v2/repositories/${username}/${repo}/tags?page_size=100`;
+              const res = await fetch(tagsUrl, {
+                headers: { Authorization: `Basic ${Buffer.from(`${username}:${token}`).toString("base64")}` },
+              });
+              const data = await res.json();
+              if (!data.results) continue;
+
+              // keep 10 newest SHA-style tags (e.g., main-abc1234)
+              const tags = data.results
+                .filter(t => /-[0-9a-f]{7}$/.test(t.name))
+                .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
+
+              const old = tags.slice(10);
+              for (const tag of old) {
+                console.log(`Deleting ${repo}:${tag.name}`);
+                await fetch(`https://hub.docker.com/v2/repositories/${username}/${repo}/tags/${tag.name}/`, {
+                  method: "DELETE",
+                  headers: { Authorization: `Basic ${Buffer.from(`${username}:${token}`).toString("base64")}` },
+                });
+              }
+            }
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

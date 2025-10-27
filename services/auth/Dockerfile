@@ -2,6 +2,10 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Take JWT_SECRET as build arg and set as env var
+ARG JWT_SECRET
+ENV JWT_SECRET=${JWT_SECRET}
+
 # Install deps
 COPY package*.json ./
 RUN npm ci
@@ -12,6 +16,7 @@ COPY src ./src
 
 # Compile TS → JS
 RUN npm run build
+
 
 # ---- Runtime stage ----
 FROM node:20-alpine

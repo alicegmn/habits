@@ -15,7 +15,7 @@ async function startServer() {
 		await testDbConnection();
 		// Initialize DB schema and seed data
 		await runInitScripts();
-
+    
 		// Create and start app
 		const app = createApp(env);
 		app.listen(port, host, () => {

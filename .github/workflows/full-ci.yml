@@ -1,0 +1,45 @@
+name: Full CI workflow
+
+on:
+  push:
+    branches:
+      - main
+      - v34
+  pull_request:
+    branches:
+      - main
+      - v34
+
+jobs:
+  frontend-full-CI:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./frontend
+
+      - name: Lint code
+        run: npm run lint
+        working-directory: ./frontend
+
+      - name: Run tests
+        run: npm test
+        working-directory: ./frontend
+
+      - name: Build project
+        if: github.ref == 'refs/heads/main'
+        run: npm run build
+        working-directory: ./frontend
+
+      - name: Mock Deployment
+        if: github.ref == 'refs/heads/main'
+        run: echo "Deploying code to the mock environment..."

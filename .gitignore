@@ -33,6 +33,5 @@ frontend/coverage/
 docker-compose.override.yml
 
 # ========== OS / EDITOR SPECIFIC ==========
-.vscode/
 .idea/
 *.swp

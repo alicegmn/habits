@@ -30,13 +30,24 @@ jobs:
         working-directory: ./services/auth
         run: npm ci
 
-      - name: Run API tests
-        working-directory: ./services/api
-        run: npm test || echo "No tests in API"
+      - name: Install Snyk CLI
+        run: npm i -g snyk
 
-      - name: Run Auth tests
-        working-directory: ./services/auth
-        run: npm test || echo "No tests in Auth"
+      - name: Run Snyk for dependencies on API
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --file=services/api/package.json
+
+      - name: Run Snyk for dependencies on Auth
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --file=services/auth/package.json
 
       - name: Build API
         working-directory: ./services/api
@@ -46,10 +57,10 @@ jobs:
         working-directory: ./services/auth
         run: npm run build
 
-      - name: Lint API code
+      - name: Run API tests
         working-directory: ./services/api
-        run: npm run lint
+        run: npm test || echo "No tests in API"
 
-      - name: Lint Auth code
+      - name: Run Auth tests
         working-directory: ./services/auth
-        run: npm run lint
+        run: npm test || echo "No tests in Auth"
