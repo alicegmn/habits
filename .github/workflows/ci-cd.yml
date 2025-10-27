@@ -133,7 +133,7 @@ jobs:
       # ==============================================================
       - name: Cleanup old images in ACR
         run: |
-          echo "🧹 Cleaning up old tags in ACR..."
+          echo "Cleaning up old tags in ACR..."
           az acr repository show-tags \
             --name ${{ secrets.ACR_NAME }} \
             --repository habits-api \
