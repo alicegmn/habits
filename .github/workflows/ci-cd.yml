@@ -14,6 +14,13 @@ jobs:
   image-build-and-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      WEBSITES_PORT: ${{ secrets.WEBSITES_PORT }}
+      DOCKER_REGISTRY_SERVER_URL: ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}
+      DOCKER_REGISTRY_SERVER_USERNAME: ${{ secrets.DOCKER_REGISTRY_SERVER_USERNAME }}
+      DOCKER_REGISTRY_SERVER_PASSWORD: ${{ secrets.DOCKER_REGISTRY_SERVER_PASSWORD }}
+
     steps:
       # --- Checkout ---
       - name: Checkout code
@@ -102,6 +109,24 @@ jobs:
           docker push $IMAGE_AUTH_DOCKERHUB:${BRANCH}
           docker push $IMAGE_AUTH_ACR:${BRANCH}-${SHORT_SHA}
           docker push $IMAGE_AUTH_ACR:${BRANCH}
+
+        # ==============================================================
+      # Deploy to Azure Web App (Container)
+      # ==============================================================
+
+      - name: Deploy API to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "habits-api"
+          images: |
+            ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}/habits-api:${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          WEBSITES_PORT: ${{ secrets.WEBSITES_PORT }}
+          DOCKER_REGISTRY_SERVER_URL: ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}
+          DOCKER_REGISTRY_SERVER_USERNAME: ${{ secrets.DOCKER_REGISTRY_SERVER_USERNAME }}
+          DOCKER_REGISTRY_SERVER_PASSWORD: ${{ secrets.DOCKER_REGISTRY_SERVER_PASSWORD }}
 
       # ==============================================================
       # Cleanup old SHA tags
