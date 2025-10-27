@@ -13,20 +13,17 @@ process.on("uncaughtException", (err) => {
 });
 
 const env = getEnv();
-const port = process.env.PORT || 4000;
-console.log(`[config] Using port ${port}`);
+const port = Number(process.env.PORT) || 4000;
 const host = "0.0.0.0";
 
 async function startServer() {
   try {
-    // Verify DB connection before starting
     await testDbConnection();
-    // Initialize DB schema and seed data
     await runInitScripts();
 
-    // Create and start app
     const app = createApp(env);
     app.listen(port, host, () => {
+      console.log(`[config] Using port ${port}`);
       console.log(`API running on http://${host}:${port}`);
       console.log(`CORS origin: ${env.CORS_ORIGIN}`);
     });
