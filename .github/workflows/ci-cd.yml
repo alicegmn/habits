@@ -1,37 +1,17 @@
-name: CI/CD Pipeline
+name: CI/CD
 
 on:
   push:
-    branches: [main, dev]
+    branches:
+      - main
+      - dev
   pull_request:
-  release:
-    types: [published]
+    branches:
+      - main
+      - dev
 
 jobs:
-  security-check:
-    runs-on: ubuntu-latest
-
-    if: github.event_name == 'pull_request'
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Initialize CodeQL (AI Code Review Start)
-        uses: github/codeql-action/init@v3
-        with:
-          languages: typescript, javascript
-
-      - name: CodeQL analysis
-        uses: github/codeql-action/analyze@v3
-
-  docker-build:
+  image-build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -80,12 +60,3 @@ jobs:
         run: |
           docker tag habits-auth:latest ${{ secrets.ACR_URL }}/habits-auth:latest
           docker push ${{ secrets.ACR_URL }}/habits-auth:latest
-
-      # Deploy to Azure Web App (only on main branch)
-      - name: Deploy API to Azure Web App
-        if: github.ref == 'refs/heads/main'
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: "habits-api"
-          images: "${{ secrets.ACR_URL }}/habits-api:latest"
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_API }}
