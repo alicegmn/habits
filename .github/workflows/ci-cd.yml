@@ -15,51 +15,252 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
+      # --- Checkout ---
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Log in to Azure
+      # --- Set up variables ---
+      - name: Set branch and SHA variables
+        id: vars
+        run: |
+          echo "BRANCH=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      # --- Log in to Azure ---
       - name: Log in to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Log in to Azure Container Registry (ACR)
+      # --- Log in to ACR ---
       - name: Log in to Azure Container Registry (ACR)
         run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_URL }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
-      # Log in to Docker Hub
+      # --- Log in to Docker Hub ---
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build & test API
+      # ==============================================================
+      # 🧱 Build & Test API
+      # ==============================================================
       - name: Build API image
-        run: docker build -t habits-api:latest ./services/api
+        run: |
+          IMAGE_API_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-api
+          IMAGE_API_ACR=${{ secrets.ACR_URL }}/habits-api
+          docker build -t $IMAGE_API_DOCKERHUB:${BRANCH}-${SHORT_SHA} -t $IMAGE_API_DOCKERHUB:${BRANCH} ./services/api
 
       - name: Run API tests
-        run: docker run --rm habits-api:latest npm test || echo "No tests in API"
+        run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/habits-api:${BRANCH}-${SHORT_SHA} npm test || echo "No tests in API"
 
-      # Build & test Auth
+      # ==============================================================
+      # 🔐 Build & Test Auth
+      # ==============================================================
       - name: Build Auth image
         run: |
+          IMAGE_AUTH_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-auth
+          IMAGE_AUTH_ACR=${{ secrets.ACR_URL }}/habits-auth
+
           docker build \
-          --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
-          -t habits-auth:latest ./services/auth
+            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            -t $IMAGE_AUTH_DOCKERHUB:${BRANCH}-${SHORT_SHA} \
+            -t $IMAGE_AUTH_DOCKERHUB:${BRANCH} \
+            ./services/auth
 
       - name: Run Auth tests
-        run: docker run --rm habits-auth:latest npm test || echo "No tests in Auth"
+        run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/habits-auth:${BRANCH}-${SHORT_SHA} npm test || echo "No tests in Auth"
 
-      # Push images to ACR
-      - name: Push API image to ACR
+      # ==============================================================
+      # ☁️ Push API image (Docker Hub + ACR)
+      # ==============================================================
+      - name: Push API image to Docker Hub & ACR
         run: |
-          docker tag habits-api:latest ${{ secrets.ACR_URL }}/habits-api:latest
-          docker push ${{ secrets.ACR_URL }}/habits-api:latest
+          IMAGE_API_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-api
+          IMAGE_API_ACR=${{ secrets.ACR_URL }}/habits-api
 
-      - name: Push Auth image to ACR
+          # Tag for ACR
+          docker tag $IMAGE_API_DOCKERHUB:${BRANCH}-${SHORT_SHA} $IMAGE_API_ACR:${BRANCH}-${SHORT_SHA}
+          docker tag $IMAGE_API_DOCKERHUB:${BRANCH} $IMAGE_API_ACR:${BRANCH}
+
+          # Push both registries
+          docker push $IMAGE_API_DOCKERHUB:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_API_DOCKERHUB:${BRANCH}
+          docker push $IMAGE_API_ACR:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_API_ACR:${BRANCH}
+
+      # ==============================================================
+      # 🔑 Push Auth image (Docker Hub + ACR)
+      # ==============================================================
+      - name: Push Auth image to Docker Hub & ACR
         run: |
-          docker tag habits-auth:latest ${{ secrets.ACR_URL }}/habits-auth:latest
-          docker push ${{ secrets.ACR_URL }}/habits-auth:latest
+          IMAGE_AUTH_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-auth
+          IMAGE_AUTH_ACR=${{ secrets.ACR_URL }}/habits-auth
+
+          # Tag for ACR
+          docker tag $IMAGE_AUTH_DOCKERHUB:${BRANCH}-${SHORT_SHA} $IMAGE_AUTH_ACR:${BRANCH}-${SHORT_SHA}
+          docker tag $IMAGE_AUTH_DOCKERHUB:${BRANCH} $IMAGE_AUTH_ACR:${BRANCH}
+
+          # Push both registries
+          docker push $IMAGE_AUTH_DOCKERHUB:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_AUTH_DOCKERHUB:${BRANCH}
+          docker push $IMAGE_AUTH_ACR:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_AUTH_ACR:${BRANCH}
+
+          name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  image-build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # --- Checkout ---
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --- Set branch and SHA variables ---
+      - name: Set branch and SHA variables
+        id: vars
+        run: |
+          echo "BRANCH=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      # --- Log in to Azure ---
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # --- Log in to ACR ---
+      - name: Log in to Azure Container Registry (ACR)
+        run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_URL }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
+
+      # --- Log in to Docker Hub ---
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ==============================================================
+      # 🧱 Build & Test API
+      # ==============================================================
+      - name: Build API image
+        run: |
+          IMAGE_API_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-api
+          IMAGE_API_ACR=${{ secrets.ACR_URL }}/habits-api
+
+          docker build \
+            -t $IMAGE_API_DOCKERHUB:${BRANCH}-${SHORT_SHA} \
+            -t $IMAGE_API_DOCKERHUB:${BRANCH} \
+            -t $IMAGE_API_ACR:${BRANCH}-${SHORT_SHA} \
+            -t $IMAGE_API_ACR:${BRANCH} \
+            ./services/api
+
+      - name: Run API tests
+        run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/habits-api:${BRANCH}-${SHORT_SHA} npm test || echo "No tests in API"
+
+      # ==============================================================
+      # 🔐 Build & Test Auth
+      # ==============================================================
+      - name: Build Auth image
+        run: |
+          IMAGE_AUTH_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-auth
+          IMAGE_AUTH_ACR=${{ secrets.ACR_URL }}/habits-auth
+
+          docker build \
+            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            -t $IMAGE_AUTH_DOCKERHUB:${BRANCH}-${SHORT_SHA} \
+            -t $IMAGE_AUTH_DOCKERHUB:${BRANCH} \
+            -t $IMAGE_AUTH_ACR:${BRANCH}-${SHORT_SHA} \
+            -t $IMAGE_AUTH_ACR:${BRANCH} \
+            ./services/auth
+
+      - name: Run Auth tests
+        run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/habits-auth:${BRANCH}-${SHORT_SHA} npm test || echo "No tests in Auth"
+
+      # ==============================================================
+      # ☁️ Push images to both Docker Hub & ACR
+      # ==============================================================
+      - name: Push API image to Docker Hub & ACR
+        run: |
+          IMAGE_API_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-api
+          IMAGE_API_ACR=${{ secrets.ACR_URL }}/habits-api
+
+          docker push $IMAGE_API_DOCKERHUB:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_API_DOCKERHUB:${BRANCH}
+          docker push $IMAGE_API_ACR:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_API_ACR:${BRANCH}
+
+      - name: Push Auth image to Docker Hub & ACR
+        run: |
+          IMAGE_AUTH_DOCKERHUB=${{ secrets.DOCKER_USERNAME }}/habits-auth
+          IMAGE_AUTH_ACR=${{ secrets.ACR_URL }}/habits-auth
+
+          docker push $IMAGE_AUTH_DOCKERHUB:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_AUTH_DOCKERHUB:${BRANCH}
+          docker push $IMAGE_AUTH_ACR:${BRANCH}-${SHORT_SHA}
+          docker push $IMAGE_AUTH_ACR:${BRANCH}
+
+      # ==============================================================
+      # 🧹 Cleanup old SHA tags
+      # ==============================================================
+      - name: Cleanup old images in ACR
+        run: |
+          echo "🧹 Cleaning up old tags in ACR..."
+          az acr repository show-tags \
+            --name ${{ secrets.ACR_NAME }} \
+            --repository habits-api \
+            --orderby time_desc \
+            --output tsv | tail -n +11 | xargs -I% az acr repository delete \
+              --name ${{ secrets.ACR_NAME }} \
+              --image habits-api:% --yes || true
+
+          az acr repository show-tags \
+            --name ${{ secrets.ACR_NAME }} \
+            --repository habits-auth \
+            --orderby time_desc \
+            --output tsv | tail -n +11 | xargs -I% az acr repository delete \
+              --name ${{ secrets.ACR_NAME }} \
+              --image habits-auth:% --yes || true
+
+      - name: Cleanup old images in Docker Hub
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fetch = require("node-fetch");
+            const username = process.env.DOCKER_USERNAME;
+            const token = process.env.DOCKER_PASSWORD;
+            const repos = ["habits-api", "habits-auth"];
+
+            for (const repo of repos) {
+              const tagsUrl = `https://hub.docker.com/v2/repositories/${username}/${repo}/tags?page_size=100`;
+              const res = await fetch(tagsUrl);
+              const data = await res.json();
+              const tags = data.results
+                .filter(t => t.name.includes('-')) // match SHA tags
+                .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
+
+              const old = tags.slice(10);
+              for (const tag of old) {
+                console.log(`🧹 Deleting ${repo}:${tag.name}`);
+                await fetch(`https://hub.docker.com/v2/repositories/${username}/${repo}/tags/${tag.name}/`, {
+                  method: "DELETE",
+                  headers: { Authorization: `Basic ${Buffer.from(`${username}:${token}`).toString("base64")}` },
+                });
+              }
+            }
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
