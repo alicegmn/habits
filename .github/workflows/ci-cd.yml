@@ -110,7 +110,7 @@ jobs:
           docker push $IMAGE_AUTH_ACR:${BRANCH}-${SHORT_SHA}
           docker push $IMAGE_AUTH_ACR:${BRANCH}
 
-        # ==============================================================
+      # ==============================================================
       # Deploy to Azure Web App (Container)
       # ==============================================================
 
@@ -122,6 +122,7 @@ jobs:
             ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}/habits-api:${{ env.BRANCH }}-${{ env.SHORT_SHA }}
 
         env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PORT: ${{ secrets.WEBSITES_PORT }}
           DOCKER_REGISTRY_SERVER_URL: ${{ secrets.DOCKER_REGISTRY_SERVER_URL }}
