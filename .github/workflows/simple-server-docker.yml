@@ -32,7 +32,7 @@ jobs:
       # Install dependencies
       - name: Install dependencies
         working-directory: simple-server
-        run: npm ci
+        run: npm install
 
       # Generate OpenAPI + Swagger UI docs
       - name: Generate API Documentation
