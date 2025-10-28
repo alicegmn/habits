@@ -1,8 +1,10 @@
-import "dotenv/config";
-import { getEnv } from "./lib/env";
-import { createApp } from "./app";
-import { testDbConnection } from "./db/testConnection";
-import { runInitScripts } from "./db/initDb";
+// import "dotenv/config";
+// import { getEnv } from "./lib/env";
+// import { testDbConnection } from "./db/testConnection";
+// import { runInitScripts } from "./db/initDb";
+// import { createApp } from "./app";
+
+import express from "express";
 
 process.on("unhandledRejection", (reason) => {
   console.error("Unhandled Rejection:", reason);
@@ -12,20 +14,25 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-const env = getEnv();
 const port = Number(process.env.PORT) || 4000;
 const host = "0.0.0.0";
 
 async function startServer() {
   try {
-    await testDbConnection();
-    await runInitScripts();
+    // Temporärt: ingen DB-anslutning
+    // await testDbConnection();
+    // await runInitScripts();
 
-    const app = createApp(env);
+    // Skapa en enkel Express-app
+    const app = express();
+
+    app.get("/", (req, res) => {
+      res.send("Välkommen till ditt API 🚀");
+    });
+
     app.listen(port, host, () => {
       console.log(`[config] Using port ${port}`);
       console.log(`API running on http://${host}:${port}`);
-      console.log(`CORS origin: ${env.CORS_ORIGIN}`);
     });
   } catch (err) {
     console.error("Failed to start server:", err);
@@ -33,7 +40,8 @@ async function startServer() {
   }
 }
 
-if (require.main === module) {
+// Starta direkt om filen körs direkt (t.ex. node server.js)
+if (import.meta.url === `file://${process.argv[1]}`) {
   startServer();
 }
 
