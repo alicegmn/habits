@@ -6,8 +6,7 @@
   "scripts": {
     "test": "echo \"Running tests...\" && exit 0",
     "start": "node server.js",
-    "docs": "node generate-docs.js",
-    "docs:html": "redoc-cli bundle docs/openapi.json -o docs/index.html"
+    "docs": "node generate-docs.js"
   },
   "keywords": [],
   "author": "",
@@ -16,8 +15,5 @@
     "express": "^5.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
-  },
-  "devDependencies": {
-    "redoc-cli": "^0.13.21"
   }
 }

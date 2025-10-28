@@ -3,7 +3,6 @@ name: Simple Server Docker CI/CD
 on:
   push:
     branches:
-      - main
       - v36
 
 jobs:
@@ -20,32 +19,32 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      # Check out repository
+      # 1️⃣ Check out repository
       - name: Check out code
         uses: actions/checkout@v3
 
-      # Set up Node.js for documentation generation
+      # 2️⃣ Set up Node.js (for docs generation)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # Install dependencies
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         working-directory: simple-server
-        run: npm install
+        run: npm ci
 
-      # Generate Swagger + Redoc documentation
-      - name: Generate API documentation
+      # 4️⃣ Generate OpenAPI + Swagger UI docs
+      - name: Generate API Documentation
         working-directory: simple-server
         run: |
-          echo "📘 Generating Swagger + Redoc documentation..."
+          echo "📘 Generating Swagger documentation..."
           npm run docs
-          npm run docs:html
           ls -l docs/
 
-      # Publish docs to GitHub Pages
+      # 5️⃣ Publish docs to GitHub Pages
       - name: Publish API Docs to GitHub Pages
+        id: publish_docs
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -55,14 +54,19 @@ jobs:
           user_email: github-actions@github.com
           commit_message: "🤖 Auto-update API docs from v36 branch"
 
-      # Log in to Docker Hub
+      # 6️⃣ Log success message
+      - name: Log success message
+        if: success()
+        run: echo "✅ Published API docs to GitHub Pages! Visit: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+
+      # 7️⃣ Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build and push Docker images (latest + v36-<sha> + branch)
+      # 8️⃣ Build and push Docker images (latest + v36-<sha> + branch)
       - name: Build and push Docker images
         run: |
           IMAGE="${{ secrets.DOCKER_USERNAME }}/simple-server"
