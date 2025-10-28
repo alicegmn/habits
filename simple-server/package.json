@@ -1,15 +1,23 @@
 {
   "name": "simple-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A super simple Express API documented with Swagger-JSDoc and Redoc.",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Running tests...\" && exit 0"
+    "test": "echo \"Running tests...\" && exit 0",
+    "start": "node server.js",
+    "docs": "node generate-docs.js",
+    "docs:html": "redoc-cli bundle docs/openapi.json -o docs/index.html"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "redoc-cli": "^0.13.21"
   }
 }

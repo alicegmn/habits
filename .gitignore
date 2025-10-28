@@ -10,6 +10,7 @@ __pycache__/
 *.sqlite3
 *.log
 backend/.env
+/docs/openapi.json
 
 # ========== PYTHON BACKEND ==========
 backend/.venv/
