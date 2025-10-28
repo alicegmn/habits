@@ -55,7 +55,7 @@ jobs:
           publish_dir: simple-server/docs
           user_name: github-actions
           user_email: github-actions@github.com
-          commit_message: "🤖 Auto-update API docs from v36 branch"
+          commit_message: "🤖 Auto-update API docs for Simple Server API"
 
       # Log in to Docker Hub
       - name: Log in to Docker Hub
