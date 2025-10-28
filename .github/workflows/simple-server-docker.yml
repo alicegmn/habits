@@ -3,6 +3,7 @@ name: Simple Server Docker CI/CD
 on:
   push:
     branches:
+      - main
       - v36
 
 jobs:
