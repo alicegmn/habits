@@ -1,19 +1,39 @@
-services:
-  api:
-    build:
-      context: ./services/api
-      dockerfile: Dockerfile
-    ports: ["${API_PORT}:3000"]
-    env_file:
-      - ./.env
-    depends_on:
-      - auth
+version: "3.9"
 
-  auth:
-    build:
-      context: ./services/auth
-      dockerfile: Dockerfile
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: simple_db
+    restart: always
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: simpledb
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
     ports:
-      - "${AUTH_PORT}:4000"
-    env_file:
-      - ./.env
+      - "5432:5432"
+
+  api:
+    build: ./simple-server
+    container_name: simple_api
+    restart: always
+    environment:
+      DATABASE_URL: postgres://appuser:password123@db:5432/simpledb
+      PORT: 3000
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build: ./simple-frontend
+    container_name: simple_frontend
+    restart: always
+    environment:
+      # Frontend needs API url to talk to backend inside docker network
+      VITE_API_URL: http://api:3000
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
