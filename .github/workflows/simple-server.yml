@@ -44,5 +44,5 @@ jobs:
             - name: Deploy to Azure Web App
               uses: azure/webapps-deploy@v2
               with:
-                  app-name: YOUR_APP_SERVICE_NAME
+                  app-name: simple-server-app
                   images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${TAG}
