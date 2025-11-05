@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Frontend</title>
+  </head>
+  <body>
+    <h1>Simple Frontend</h1>
+
+    <button id="load">Load Notes</button>
+    <ul id="notes"></ul>
+
+    <input id="noteText" placeholder="Write a note..." />
+    <button id="add">Add Note</button>
+
+    <script>
+      const API_URL = "http://localhost:3000";
+
+      document.getElementById("load").onclick = async () => {
+        const res = await fetch(`${API_URL}/notes`);
+        const notes = await res.json();
+        document.getElementById("notes").innerHTML = notes
+          .map((n) => `<li>${n.text}</li>`)
+          .join("");
+      };
+
+      document.getElementById("add").onclick = async () => {
+        const text = document.getElementById("noteText").value;
+        await fetch(`${API_URL}/notes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        alert("Note added!");
+      };
+    </script>
+  </body>
+</html>
