@@ -2,7 +2,9 @@ import { render, screen } from "@testing-library/react";
 import App from "./App";
 import "@testing-library/jest-dom";
 
-test("shows Simple Notes heading", () => {
+test("shows Simple Notes heading", async () => {
   render(<App />);
-  expect(screen.getByText(/Simple Notes/i)).toBeInTheDocument();
+
+  // Wait for heading to appear
+  expect(await screen.findByText(/Simple Notes/i)).toBeInTheDocument();
 });
