@@ -76,17 +76,14 @@ jobs:
           BRANCH=${GITHUB_REF_NAME}
 
           echo "Tagging:"
-          echo " - $IMAGE:latest"
           echo " - $IMAGE:${BRANCH}"
           echo " - $IMAGE:${BRANCH}-${SHORT_SHA}"
 
           docker build --target production \
             --platform linux/amd64 \
-            -t "$IMAGE:latest" \
             -t "$IMAGE:${BRANCH}" \
             -t "$IMAGE:${BRANCH}-${SHORT_SHA}" \
             -f simple-server/Dockerfile simple-server
 
-          docker push "$IMAGE:latest"
           docker push "$IMAGE:${BRANCH}"
           docker push "$IMAGE:${BRANCH}-${SHORT_SHA}"
