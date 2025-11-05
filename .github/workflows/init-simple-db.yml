@@ -1,0 +1,28 @@
+name: Init Azure SimpleDB
+
+on:
+  workflow_dispatch: {} # manual trigger from GitHub Actions
+
+jobs:
+  init-azure-db:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Test connection to Azure Postgres
+        env:
+          PGHOST: ${{ secrets.PGHOST }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+        run: |
+          echo "Testing connection to $PGDATABASE on $PGHOST"
+          psql "host=$PGHOST dbname=$PGDATABASE user=$PGUSER password=$PGPASSWORD sslmode=require" -c "\conninfo"
+          echo "✅ Database connection successful."
