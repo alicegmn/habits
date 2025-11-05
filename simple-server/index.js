@@ -6,62 +6,46 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(
-  cors({
-    origin: [
-      "http://localhost:3000", // local server
-      "http://localhost:5173", // vite
-      "http://localhost:5500", // live server
-      "http://localhost:62153", // serve
-      "https://your-swa-url.azurestaticapps.net", // prod frontend
-    ],
-  })
-);
-app.use(express.json());
-
-app.use(express.json());
-
-// Postgres pool
+// Always use DATABASE_URL
 const pool = new Pool({
-  host: process.env.PG_HOST,
-  port: process.env.PG_PORT,
-  user: process.env.PG_USER,
-  password: process.env.PG_PASSWORD,
-  database: process.env.PG_DATABASE,
-  ssl: process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
+	connectionString: process.env.DATABASE_URL,
+	ssl: { rejectUnauthorized: false },
 });
+
+app.use(cors());
+app.use(express.json());
 
 // Ensure table exists
 (async () => {
-  await pool.query(`
+	await pool.query(`
     CREATE TABLE IF NOT EXISTS notes (
       id SERIAL PRIMARY KEY,
       text VARCHAR(255) NOT NULL
     )
   `);
-  console.log("DB ready");
+	console.log("✅ Connected to Azure DB & ensured table exists");
 })();
-
-app.get("/", (req, res) => {
-  res.json({ message: "Simple server with Postgres is running!" });
-});
 
 // ---- CRUD ----
 
+app.get("/", (req, res) => {
+	res.json({ message: "Simple server with Postgres is running!" });
+});
+
 app.get("/notes", async (req, res) => {
-  const result = await pool.query("SELECT * FROM notes ORDER BY id DESC");
-  res.json(result.rows);
+	const result = await pool.query("SELECT * FROM notes ORDER BY id DESC");
+	res.json(result.rows);
 });
 
 app.post("/notes", async (req, res) => {
-  const { text } = req.body;
-  const result = await pool.query(
-    "INSERT INTO notes (text) VALUES ($1) RETURNING *",
-    [text]
-  );
-  res.json(result.rows[0]);
+	const { text } = req.body;
+	const result = await pool.query(
+		"INSERT INTO notes (text) VALUES ($1) RETURNING *",
+		[text]
+	);
+	res.json(result.rows[0]);
 });
 
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+	console.log(`Server running at http://localhost:${port}`);
 });

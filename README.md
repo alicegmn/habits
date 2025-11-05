@@ -1,2 +1,1 @@
-# habits
-Track your daily habits.
+# Simple API, DB and FE for school
