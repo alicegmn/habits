@@ -90,5 +90,10 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ github.ref_name == 'simple-main' && 'simple-server-prod' || 'simple-server-staging' }}
+          app-name: simple-server-app # istället för simple-server-prod
           images: ${{ secrets.DOCKERHUB_USERNAME }}/simple-server:${{ env.TAG }}
+
+    # In the future:
+    # with:
+    # app-name: ${{ github.ref_name == 'simple-main' && 'simple-server-prod' || 'simple-server-staging' }}
+    # images: ${{ secrets.DOCKERHUB_USERNAME }}/simple-server:${{ env.TAG }}
