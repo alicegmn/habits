@@ -68,4 +68,9 @@ app.get("/stress", (req, res) => {
 	res.json({ status: "Memory spiked!" });
 });
 
+// new endpoint showing us that deployment was succesful
+app.get("/deployed", (req, res) => {
+	res.json({ message: "The app has been successfully deployed!" });
+});
+
 module.exports = app;
