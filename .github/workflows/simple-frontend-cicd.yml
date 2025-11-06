@@ -1,0 +1,86 @@
+name: Simple Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - simple-dev
+      - simple-main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - simple-dev
+      - simple-main
+
+jobs:
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+
+    steps:
+      # --- Checkout repo ---
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          lfs: false
+
+      # --- Setup Node ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: simple-frontend/package-lock.json
+
+      # --- Install dependencies ---
+      - name: Install dependencies
+        working-directory: simple-frontend
+        run: npm ci
+
+      # --- Build frontend ---
+      - name: Build frontend
+        working-directory: simple-frontend
+        run: npm run build
+
+      # --- Select Azure Token based on branch ---
+      - name: Set environment
+        id: set-env
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "simple-main" ]]; then
+            echo "AZURE_TOKEN=${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_HAPPY_MUD_0E512F703 }}" >> $GITHUB_ENV
+          else
+            echo "AZURE_TOKEN=${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROUD_GLACIER_08CFB2D03 }}" >> $GITHUB_ENV
+          fi
+
+      # --- Deploy to Azure Static Web App ---
+      - name: Deploy to Azure Static Web App
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ env.AZURE_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "simple-frontend"
+          output_location: "dist"
+          api_location: ""
+
+  # --- Close PR Deployment ---
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Set environment
+        id: set-env
+        run: |
+          if [[ "${GITHUB_BASE_REF}" == "simple-main" ]]; then
+            echo "AZURE_TOKEN=${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_HAPPY_MUD_0E512F703 }}" >> $GITHUB_ENV
+          else
+            echo "AZURE_TOKEN=${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROUD_GLACIER_08CFB2D03 }}" >> $GITHUB_ENV
+          fi
+
+      - name: Close Pull Request
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ env.AZURE_TOKEN }}
+          action: "close"
