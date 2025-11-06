@@ -5,9 +5,13 @@ on:
     branches:
       - "simple*"
       # för att tester ska köras på alla branches som börjar med simple (den som endast heter simple representerar "feature-branches" - sen finns simple-dev och simple-main också)
+    paths:
+      - "simple-server/**"
   pull_request:
     branches:
       - "simple*"
+    paths:
+      - "simple-server/**"
 
 jobs:
   # BUILD & TEST (runs on all simple-* branches)

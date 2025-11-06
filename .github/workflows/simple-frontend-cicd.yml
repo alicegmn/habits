@@ -4,12 +4,16 @@ on:
   push:
     branches:
       - "simple*" # lint/test/build on all simple-* branches
+    paths:
+      - "simple-frontend/**"
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
       # deploys Azure SWA from these two branches:
       - simple-dev
       - simple-main
+    paths:
+      - "simple-frontend/**"
 
 jobs:
   # --- LINT, TEST & BUILD ---
