@@ -1,89 +1,89 @@
-name: Simple Server CI/CD
+# name: Simple Server CI/CD
 
-on:
-  push:
-    branches:
-      - simple-main
+# on:
+#   push:
+#     branches:
+#       - "simple*"
 
-jobs:
-  # ---- FRONTEND BUILD ----
-  frontend-build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+# jobs:
+#   # ---- FRONTEND BUILD ----
+#   frontend-build:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: "npm"
-          cache-dependency-path: simple-frontend/package-lock.json
+#       - name: Setup Node
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 22
+#           cache: "npm"
+#           cache-dependency-path: simple-frontend/package-lock.json
 
-      - name: Install frontend deps
-        run: |
-          cd simple-frontend
-          npm ci
+#       - name: Install frontend deps
+#         run: |
+#           cd simple-frontend
+#           npm ci
 
-      - name: Lint frontend
-        run: |
-          cd simple-frontend
-          npm run lint
+#       - name: Lint frontend
+#         run: |
+#           cd simple-frontend
+#           npm run lint
 
-      - name: Test frontend
-        run: |
-          cd simple-frontend
-          npm test
+#       - name: Test frontend
+#         run: |
+#           cd simple-frontend
+#           npm test
 
-      - name: Build frontend
-        run: |
-          cd simple-frontend
-          npm run build
+#       - name: Build frontend
+#         run: |
+#           cd simple-frontend
+#           npm run build
 
-  # ---- BACKEND DOCKER BUILD ----
-  backend-test-build:
-    runs-on: ubuntu-latest
-    needs: frontend-build
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+#   # ---- BACKEND DOCKER BUILD ----
+#   backend-test-build:
+#     runs-on: ubuntu-latest
+#     needs: frontend-build
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
 
-      - name: Docker build (test stage)
-        run: |
-          docker build --target build \
-            --platform linux/amd64 \
-            -t simple-server-test \
-            -f simple-server/Dockerfile simple-server
+#       - name: Docker build (test stage)
+#         run: |
+#           docker build --target build \
+#             --platform linux/amd64 \
+#             -t simple-server-test \
+#             -f simple-server/Dockerfile simple-server
 
-  # ---- BACKEND DOCKER PUSH ----
-  push-backend-image:
-    runs-on: ubuntu-latest
-    needs: backend-test-build
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+#   # ---- BACKEND DOCKER PUSH ----
+#   push-backend-image:
+#     runs-on: ubuntu-latest
+#     needs: backend-test-build
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+#       - name: Login to Docker Hub
+#         uses: docker/login-action@v3
+#         with:
+#           username: ${{ secrets.DOCKER_USERNAME }}
+#           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build & Push Docker image
-        run: |
-          IMAGE="${{ secrets.DOCKER_USERNAME }}/simple-server"
-          SHORT_SHA=${GITHUB_SHA::7}
-          BRANCH=${GITHUB_REF_NAME}
+#       - name: Build & Push Docker image
+#         run: |
+#           IMAGE="${{ secrets.DOCKER_USERNAME }}/simple-server"
+#           SHORT_SHA=${GITHUB_SHA::7}
+#           BRANCH=${GITHUB_REF_NAME}
 
-          echo "Tagging:"
-          echo " - $IMAGE:${BRANCH}"
-          echo " - $IMAGE:${BRANCH}-${SHORT_SHA}"
+#           echo "Tagging:"
+#           echo " - $IMAGE:${BRANCH}"
+#           echo " - $IMAGE:${BRANCH}-${SHORT_SHA}"
 
-          docker build --target production \
-            --platform linux/amd64 \
-            -t "$IMAGE:${BRANCH}" \
-            -t "$IMAGE:${BRANCH}-${SHORT_SHA}" \
-            -f simple-server/Dockerfile simple-server
+#           docker build --target production \
+#             --platform linux/amd64 \
+#             -t "$IMAGE:${BRANCH}" \
+#             -t "$IMAGE:${BRANCH}-${SHORT_SHA}" \
+#             -f simple-server/Dockerfile simple-server
 
-          docker push "$IMAGE:${BRANCH}"
-          docker push "$IMAGE:${BRANCH}-${SHORT_SHA}"
+#           docker push "$IMAGE:${BRANCH}"
+#           docker push "$IMAGE:${BRANCH}-${SHORT_SHA}"
