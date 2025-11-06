@@ -46,8 +46,15 @@ app.post("/notes", async (req, res) => {
 	res.json(result.rows[0]);
 });
 
+// For testing azure monitoring integration and alerting
+
 app.get("/error", (req, res) => {
 	throw new Error("Intentional test error!");
+});
+
+app.get("/stress", (req, res) => {
+	const bigArray = Array(1e7).fill("data");
+	res.json({ status: "Memory spiked!" });
 });
 
 app.listen(port, () => {
