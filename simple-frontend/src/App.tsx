@@ -36,7 +36,7 @@ export default function App() {
 						value={input}
 						onChange={(e) => setInput(e.target.value)}
 					/>
-					<button onClick={handleAdd}>Add Note</button>
+					<button onClick={handleAdd}>Add Note (with a small change)</button>
 				</div>
 
 				<ul>
