@@ -1,9 +1,9 @@
-name: Simple Fullstack CI/CD
+name: Simple Server CI/CD
 
 on:
   push:
     branches:
-      - simple
+      - simple-main
 
 jobs:
   # ---- FRONTEND BUILD ----
