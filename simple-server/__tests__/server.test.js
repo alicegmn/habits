@@ -9,7 +9,7 @@ jest.mock("pg", () => {
 		connect: jest.fn(),
 		end: jest.fn(),
 	};
-	return { Pool: jest.fn(() => mClient) };
+	return { Pool: jest.fn(() => mClient), __mClient: mClient };
 });
 
 const app = require("../server");
