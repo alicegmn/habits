@@ -1,6 +1,6 @@
 const request = require("supertest");
 
-// mocked pg Pool so it doesn’t hit a real database
+// --- Mock PG Pool ---
 jest.mock("pg", () => {
 	const mClient = {
 		query: jest
@@ -9,9 +9,11 @@ jest.mock("pg", () => {
 		connect: jest.fn(),
 		end: jest.fn(),
 	};
-	return { Pool: jest.fn(() => mClient) };
+	// 👇 Exportera så vi kan manipulera i testet
+	return { Pool: jest.fn(() => mClient), __mClient: mClient };
 });
 
+const { __mClient } = require("pg"); // 👈 lägg till detta
 const app = require("../server");
 
 describe("Simple Server", () => {
@@ -22,11 +24,15 @@ describe("Simple Server", () => {
 	});
 
 	it("POST /notes should create a note (mocked DB)", async () => {
+		// 🔥 Gör nästa DB-anrop till ett fel (simulerad krasch)
+		__mClient.query.mockRejectedValueOnce(new Error("Simulated DB failure"));
+
 		const res = await request(app)
 			.post("/notes")
 			.send({ text: "Hello world" })
 			.set("Accept", "application/json");
 
+		// Den här raden kommer nu FAILA eftersom status blir 500 istället för 200
 		expect(res.statusCode).toBe(200);
 		expect(res.body).toHaveProperty("text", "Mocked note");
 	});
