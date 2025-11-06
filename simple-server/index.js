@@ -35,6 +35,7 @@ app.get("/", (req, res) => {
 app.get("/notes", async (req, res) => {
 	const result = await pool.query("SELECT * FROM notes ORDER BY id DESC");
 	res.json(result.rows);
+	console.error("Här är ett fel! Men det är bara ett testfel.");
 });
 
 app.post("/notes", async (req, res) => {
