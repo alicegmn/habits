@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - simple-dev
+      - simple-main
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
       - simple-dev
+      - simple-main
 
 jobs:
   build_and_deploy_job:
@@ -40,12 +42,22 @@ jobs:
         working-directory: simple-frontend
         run: npm run build
 
-      # --- Deploy built app to Azure Static Web App ---
+      # --- Select Azure Token based on branch ---
+      - name: Set environment
+        id: set-env
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "simple-main" ]]; then
+            echo "AZURE_TOKEN=${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_HAPPY_MUD_0E512F703 }}" >> $GITHUB_ENV
+          else
+            echo "AZURE_TOKEN=${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROUD_GLACIER_08CFB2D03 }}" >> $GITHUB_ENV
+          fi
+
+      # --- Deploy to Azure Static Web App ---
       - name: Deploy to Azure Static Web App
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROUD_GLACIER_08CFB2D03 }}
+          azure_static_web_apps_api_token: ${{ env.AZURE_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "simple-frontend"
@@ -58,9 +70,17 @@ jobs:
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
+      - name: Set environment
+        id: set-env
+        run: |
+          if [[ "${GITHUB_BASE_REF}" == "simple-main" ]]; then
+            echo "AZURE_TOKEN=${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_HAPPY_MUD_0E512F703 }}" >> $GITHUB_ENV
+          else
+            echo "AZURE_TOKEN=${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROUD_GLACIER_08CFB2D03 }}" >> $GITHUB_ENV
+          fi
+
       - name: Close Pull Request
-        id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROUD_GLACIER_08CFB2D03 }}
+          azure_static_web_apps_api_token: ${{ env.AZURE_TOKEN }}
           action: "close"
