@@ -28,6 +28,10 @@
 
 En multistage pipeline och struktur gör projektet mer robust, skalbart och lättare att underhålla.
 
+## Printscreen: Preview deployment:
+
+[Preview deployment: simple-frontend](Skärmavbild 2025-11-06 kl. 13.58.37.png)
+
 ## V36 - uppgift 5: Skriv i README hur du: Hittade felet i loggen. Fixade buggen. Verifierade att pipelinen blev grön igen.
 
 Sökte upp felet i jobbet under Actions i Github, analyserade genom att läsa vad det berodde på, inte så svårt eftersom att jag själv framkallat felet, sedan har jag
