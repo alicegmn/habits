@@ -1,0 +1,94 @@
+name: Simple Server CI/CD
+
+on:
+  push:
+    branches:
+      - "simple*"
+      # för att tester ska köras på alla branches som börjar med simple (den som endast heter simple representerar "feature-branches" - sen finns simple-dev och simple-main också)
+  pull_request:
+    branches:
+      - "simple*"
+
+jobs:
+  # BUILD & TEST (runs on all simple-* branches)
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: simple-server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: simple-server
+        run: npm ci
+
+      - name: Run ES lint
+        working-directory: simple-server
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: simple-server
+        run: npm test
+
+  # BUILD & PUSH DOCKER IMAGE (only on simple-dev/main)
+  docker-build-and-push:
+    runs-on: ubuntu-latest
+    needs: build-and-test # so it only runs if tests pass
+    if: github.ref_name == 'simple-dev' || github.ref_name == 'simple-main'
+    env:
+      IMAGE_NAME: simple-server
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set environment tag
+        id: vars
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "simple-main" ]]; then
+            echo "TAG=prod-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          else
+            echo "TAG=staging-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          fi
+
+      - name: Build Docker image
+        run: |
+          docker build --target production \
+            --platform linux/amd64 \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.TAG }} \
+            ./simple-server
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
+
+  # DEPLOY TO AZURE (only after image push)
+  deploy-to-azure:
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
+    if: github.ref_name == 'simple-dev' || github.ref_name == 'simple-main'
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ github.ref_name == 'simple-main' && 'simple-server-prod' || 'simple-server-staging' }}
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/simple-server:${{ env.TAG }}
