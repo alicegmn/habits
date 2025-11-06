@@ -47,7 +47,7 @@ app.post("/notes", async (req, res) => {
 	try {
 		const { text } = req.body;
 		const result = await pool.query(
-			"INSERT INTO notes (text) VALUES ($1) RETURNING *",
+			"INSER INTO notes (text) VALUES ($1) RETURNING *", // 👈 typo: INSER istället för INSERT
 			[text]
 		);
 		res.json(result.rows[0]);
