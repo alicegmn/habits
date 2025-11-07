@@ -58,6 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-test
     if: github.ref_name == 'simple-dev' || github.ref_name == 'simple-main'
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }} # export variable for deploy job
     env:
       IMAGE_NAME: simple-server
 
@@ -71,39 +73,39 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # - name: Set environment tag
-      #   id: vars
-      #   run: |
-      #     if [[ "${GITHUB_REF_NAME}" == "simple-main" ]]; then
-      #       echo "TAG=prod-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      #     else
-      #       echo "TAG=staging-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      #     fi
+      - name: Set image tag
+        id: vars
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "simple-main" ]]; then
+            TAG=prod-${GITHUB_RUN_NUMBER}
+          else
+            TAG=staging-${GITHUB_RUN_NUMBER}
+          fi
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      # - name: Build Docker image
-      #   run: |
-      #     docker build --target production \
-      #       --platform linux/amd64 \
-      #       -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.TAG }} \
-      #       ./simple-server
-
-      # Temporary fix with :latest
+        # Build Docker images for both tags
       - name: Build Docker image
         run: |
           docker build --target production \
             --platform linux/amd64 \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${TAG} \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
             ./simple-server
 
+        # Push both tags to Docker Hub
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${TAG}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
   # --- DEPLOY TO AZURE (only after successful build/push) ---
   deploy-to-azure:
     runs-on: ubuntu-latest
     needs: docker-build-and-push
     if: needs.docker-build-and-push.result == 'success' && (github.ref_name == 'simple-dev' || github.ref_name == 'simple-main')
-
+    env:
+      TAG: ${{ needs.docker-build-and-push.outputs.tag }} # imports tag
     steps:
       - name: Azure Login
         uses: azure/login@v1
@@ -114,15 +116,7 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ github.ref_name == 'simple-main' && 'simple-server-app' || 'simple-server-dev' }}
-          # Temporary fix with :latest
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/simple-server:latest
-
-      # - name: Deploy to Azure Web App
-      #   id: deploy
-      #   uses: azure/webapps-deploy@v2
-      #   with:
-      #     app-name: ${{ github.ref_name == 'simple-main' && 'simple-server-app' || 'simple-server-dev' }}
-      #     images: ${{ secrets.DOCKERHUB_USERNAME }}/simple-server:${{ env.TAG }}
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/simple-server:${{ env.TAG }}
 
       - name: Verify deployment success
         if: failure()
