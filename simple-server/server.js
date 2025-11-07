@@ -70,7 +70,10 @@ app.get("/stress", (req, res) => {
 
 // new endpoint showing us that deployment was succesful
 app.get("/deployed", (req, res) => {
-	res.json({ message: "The app has been successfully deployed!" });
+	res.json({
+		message:
+			"The app has been successfully deployed now so we can see the change!",
+	});
 });
 
 module.exports = app;
