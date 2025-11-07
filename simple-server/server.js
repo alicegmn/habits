@@ -77,7 +77,7 @@ app.get("/deployed", (req, res) => {
 });
 
 // second new endpoint showing us that deployment was succesful
-app.get("/deployed2", (req, res) => {
+app.get("/deployed3", (req, res) => {
 	res.json({
 		message:
 			"The app has been successfully deployed 2 now so we can see the change! now it might work",
