@@ -80,7 +80,7 @@ app.get("/deployed", (req, res) => {
 app.get("/deployed2", (req, res) => {
 	res.json({
 		message:
-			"The app has been successfully deployed 2 now so we can see the change!",
+			"The app has been successfully deployed 2 now so we can see the change! now it might work",
 	});
 });
 
